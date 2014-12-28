@@ -172,7 +172,9 @@ uint32 getSrcValue(char srcVal) {
 }
 void print_packet(Dexcom_packet* pPkt) {
     uartEnable();
-    printf("%lu %lu %hhu", dex_num_decoder(pPkt->raw), 2 * dex_num_decoder(pPkt->filtered), pPkt->battery);
+    char srcAddr[6];
+    dexcom_src_to_ascii(pPkt->src_addr, srcAddr);
+    printf("%lu %lu %hhu %s", dex_num_decoder(pPkt->raw), 2 * dex_num_decoder(pPkt->filtered), pPkt->battery, srcAddr);
     uartDisable();
 }
 
