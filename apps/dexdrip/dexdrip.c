@@ -67,6 +67,15 @@ typedef struct _Dexcom_packet {
     uint8   LQI;
 } Dexcom_packet;
 
+typedef struct _Buffered_packet {
+  Dexcom_packet packet;
+  int16 wixel_battery;
+  uint32 offset;
+} Buffered_packet;
+
+XDATA Buffered_packet packet_buffer[48];
+uint8 buffered_packets = 0;
+
 void uartEnable() {
     U1UCR |= 0x40; //CTS/RTS ON
     delayMs(1000);
@@ -180,6 +189,19 @@ void print_packet(Dexcom_packet* pPkt) {
     uartEnable();
     printf("%lu %hhu %d", dex_num_decoder(pPkt->raw), pPkt->battery, adcConvertToMillivolts(adcRead(5)));
     uartDisable();
+}
+
+void load_buffer(Dexcom_packet* pPkt) {
+  packet_buffer[buffered_packets].packet.len = pPkt->len;
+  packet_buffer[buffered_packets].offset = getMs();
+  buffered_packets++;
+}
+
+void unload_buffer() {
+  while (buffered_packets > 0) {
+    // do stuff
+    buffered_packets--;
+  }
 }
 
 void makeAllOutputs() {
@@ -343,7 +365,9 @@ void main() {
         if(!get_packet(&Pkt))
             continue;
 
+        load_buffer(&Pkt);
         print_packet(&Pkt);
+        unload_buffer();
 
         RFST = 4;
         delayMs(80);
